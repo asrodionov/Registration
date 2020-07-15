@@ -13,7 +13,7 @@ import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 import static io.restassured.RestAssured.given;
 
-public class AuthTest {
+public class AuthBlockedUserTest {
 
     private static RequestSpecification requestSpec = new RequestSpecBuilder()
             .setBaseUri("http://localhost")
@@ -30,7 +30,7 @@ public class AuthTest {
 
         given()
                 .spec(requestSpec)
-                .body(gson.toJson(new RegistrationDto("vasya", "123", "active")))
+                .body(gson.toJson(new RegistrationDto("vasya", "123", "blocked")))
                 .when()
                 .post("/api/system/users")
                 .then()
@@ -38,14 +38,16 @@ public class AuthTest {
     }
 
     @Test
-    void shouldAuthorizationValidUser() {
+    void shouldNotAuthorizationValidUser() {
 
         open("http://localhost:9999/");
         SelenideElement form = $("form");
         form.$("[data-test-id=login] input").setValue("vasya");
         form.$("[data-test-id=password] input").setValue("123");
         form.$("button.button").click();
-        $("h2").shouldHave(exactText("Личный кабинет"));
+        $("[data-test-id=error-notification]").waitUntil(visible, 5000);
+        $("[data-test-id=error-notification]  .notification__title").shouldHave(exactText("Ошибка"));
+        $("[data-test-id=error-notification]  .notification__content").shouldHave(exactText("Ошибка! Пользователь заблокирован"));
     }
 
     @Test
